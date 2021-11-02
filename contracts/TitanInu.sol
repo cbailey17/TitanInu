@@ -132,6 +132,10 @@ contract Ownable is Context {
     }
 }
 
+// ------------------------------------------------------------------------------------------------------
+// Interfaces: Uniswap interfaces
+// Interfaces used to interface with uniswap DEX
+// ------------------------------------------------------------------------------------------------------
 interface IUniswapV2Factory {
     function createPair(address tokenA, address tokenB) external returns (address pair);
 }
@@ -243,7 +247,15 @@ contract TitanInu is Context, IERC20, Ownable {
     }
 
     function approve(address spender, uint256 amount) external returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
 
+    function _approve(address tOwner, address spender, uint256 amount) private {
+        require(tOwner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+        _allowances[tOwner][spender] = amount;
+        emit Approval(tOwner, spender, amount);
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {

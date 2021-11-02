@@ -10,7 +10,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // ------------------------------------------------------------------------------------------------------
 
-
 pragma solidity ^0.8.4;
 
 // ------------------------------------------------------------------------------------------------------
@@ -157,13 +156,19 @@ interface IUniswapV2Router02 {
     ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
 }
 
-
+// ------------------------------------------------------------------------------------------------------
+// Contract: TitanInu
+// Main contract for the TitanInu ERC-20 token created and deployed on the ethereum blockchain
+// ------------------------------------------------------------------------------------------------------
 contract TitanInu is Context, IERC20, Ownable {
     using SafeMath for uint256;
     mapping(address => uint256) private _rOwned;
     mapping(address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
     mapping (address => bool) private _isExcludedFromFee;
+    
+    address payable private _FeeAddress;
+    address payable private _marketingWalletAddress;
 
     string private _name = 'Titan Inu';
     string private _symbol = 'TITAN';
@@ -173,15 +178,21 @@ contract TitanInu is Context, IERC20, Ownable {
     uint256 private _tTotal = 1e12 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
-    
+
+    IUniswapV2Router02 private uniswapV2Router;
+    address private uniswapV2Pair;
+    bool private tradingOpen;
+    bool private swapEnabled = false;
     bool private inSwap = false;
+
     modifier lockTheSwap {
         inSwap = true;
         _;
         inSwap = false;
     }
+
     constructor(address payable FeeAddress, address payable marketingWalletAddress) {
-         _FeeAddress = FeeAddress;
+        FeeAddress = FeeAddress;
         _marketingWalletAddress = marketingWalletAddress;
         _rOwned[_msgSender()] = _rTotal;
         _isExcludedFromFee[owner()] = true;
@@ -207,15 +218,28 @@ contract TitanInu is Context, IERC20, Ownable {
     }
 
     function balanceOf(address account) public view override returns (uint256) {
-         
+         return tokenFromReflection(_rOwned[account]);
+    }
+
+    function tokenFromReflection(uint256 rAmount) private view returns(uint256) {
+        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        uint256 currentRate = _getRate();
+        return rAmount.div(currentRate);
     }
 
     function transfer(address recipient, uint256 amount) external returns (bool) {
-
+        _transfer(_msgSender(), recipient, amount);
+        return true;
     }
 
-    function allowance(address owner, address spender) external view returns (uint256) {
+    function _transfer(address from, address to, uint256 amount) private {
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+    }
 
+    function allowance(address tOwner, address spender) external view returns (uint256) {
+        return _allowances[tOwner][spender];
     }
 
     function approve(address spender, uint256 amount) external returns (bool) {

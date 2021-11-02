@@ -163,6 +163,7 @@ contract TitanInu is Context, IERC20, Ownable {
     mapping(address => uint256) private _rOwned;
     mapping(address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
+    mapping (address => bool) private _isExcludedFromFee;
 
     string private _name = 'Titan Inu';
     string private _symbol = 'TITAN';
